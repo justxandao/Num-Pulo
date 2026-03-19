@@ -1,0 +1,86 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  MERCHANT
+  COURIER
+  CUSTOMER
+}
+
+enum OrderStatus {
+  PENDING
+  ACCEPTED
+  PREPARING
+  READY
+  DISPATCHED
+  DELIVERED
+  CANCELED
+}
+
+model User {
+  id        String   @id @default(uuid())
+  role      UserRole
+  email     String   @unique
+  password  String
+  name      String
+  phone     String?
+  stores    Store[]
+  orders    Order[]  @relation("CustomerOrders")
+  deliveries Order[] @relation("CourierDeliveries")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Store {
+  id          String   @id @default(uuid())
+  ownerId     String
+  name        String
+  isOpen      Boolean  @default(false)
+  catalog     Product[]
+  orders      Order[]
+  owner       User     @relation(fields: [ownerId], references: [id])
+}
+
+model Product {
+  id          String   @id @default(uuid())
+  storeId     String
+  name        String
+  price       Decimal
+  isActive    Boolean  @default(true)
+  store       Store    @relation(fields: [storeId], references: [id])
+  orderItems  OrderItem[]
+}
+
+model Order {
+  id             String      @id @default(uuid())
+  customerId     String
+  storeId        String
+  courierId      String?
+  status         OrderStatus
+  totalAmount    Decimal
+  deliveryFee    Decimal
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  
+  customer       User        @relation("CustomerOrders", fields: [customerId], references: [id])
+  courier        User?       @relation("CourierDeliveries", fields: [courierId], references: [id])
+  store          Store       @relation(fields: [storeId], references: [id])
+  items          OrderItem[]
+}
+
+model OrderItem {
+  id        String  @id @default(uuid())
+  orderId   String
+  productId String
+  quantity  Int
+  price     Decimal
+  order     Order   @relation(fields: [orderId], references: [id])
+  product   Product @relation(fields: [productId], references: [id])
+}
