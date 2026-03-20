@@ -29,6 +29,14 @@ export class SocketService {
     const pubClient = new Redis(redisUrl)
     const subClient = pubClient.duplicate()
 
+    pubClient.on('error', (err) => {
+      console.warn('Redis pubClient error:', err.message)
+    })
+    
+    subClient.on('error', (err) => {
+      console.warn('Redis subClient error:', err.message)
+    })
+
     this.io.adapter(createAdapter(pubClient, subClient))
 
     // Middleware de Autenticação JWT
