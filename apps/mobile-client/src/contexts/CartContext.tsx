@@ -15,6 +15,7 @@ interface CartContextData {
   items: CartItem[]
   addToCart: (product: Product) => void
   removeFromCart: (productId: string) => void
+  updateQuantity: (productId: string, amount: number) => void
   clearCart: () => void
   total: number
 }
@@ -41,6 +42,18 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const removeFromCart = (productId: string) => {
     setItems(current => current.filter(i => i.id !== productId))
+  }
+
+  const updateQuantity = (productId: string, amount: number) => {
+    setItems(current => {
+      return current.map(item => {
+        if (item.id === productId) {
+          const newQuantity = Math.max(0, item.quantity + amount)
+          return { ...item, quantity: newQuantity }
+        }
+        return item
+      }).filter(item => item.quantity > 0)
+    })
   }
 
   const clearCart = () => setItems([])

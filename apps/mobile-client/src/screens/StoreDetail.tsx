@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { StyleSheet, View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Image } from 'react-native'
-import { ArrowLeft, ShoppingBag, Plus } from 'lucide-react-native'
+import { ArrowLeft, ShoppingBag, Plus, Minus } from 'lucide-react-native'
 import api from '../services/api'
 import { useCart } from '../contexts/CartContext'
 
@@ -8,7 +8,7 @@ export default function StoreDetail({ route, navigation }: any) {
   const { store } = route.params
   const [products, setProducts] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
-  const { items, addToCart, total } = useCart()
+  const { items, addToCart, updateQuantity, total } = useCart()
 
   const fetchProducts = async () => {
     try {
@@ -54,12 +54,30 @@ export default function StoreDetail({ route, navigation }: any) {
                   <Text style={styles.productName}>{product.name}</Text>
                   <Text style={styles.productPrice}>R$ {Number(product.price).toFixed(2).replace('.', ',')}</Text>
                 </View>
-                <TouchableOpacity 
-                  style={styles.addButton}
-                  onPress={() => addToCart({ ...product, storeId: store.id })}
-                >
-                  <Plus size={20} color="#fff" />
-                </TouchableOpacity>
+                {items.find(i => i.id === product.id) ? (
+                  <View style={styles.quantityContainer}>
+                    <TouchableOpacity 
+                      style={styles.qtyButton}
+                      onPress={() => updateQuantity(product.id, -1)}
+                    >
+                      <Minus size={16} color="#fff" />
+                    </TouchableOpacity>
+                    <Text style={styles.qtyText}>{items.find(i => i.id === product.id)?.quantity}</Text>
+                    <TouchableOpacity 
+                      style={styles.qtyButton}
+                      onPress={() => updateQuantity(product.id, 1)}
+                    >
+                      <Plus size={16} color="#fff" />
+                    </TouchableOpacity>
+                  </View>
+                ) : (
+                  <TouchableOpacity 
+                    style={styles.addButton}
+                    onPress={() => addToCart({ ...product, storeId: store.id })}
+                  >
+                    <Plus size={20} color="#fff" />
+                  </TouchableOpacity>
+                )}
               </View>
             ))}
           </View>
@@ -172,10 +190,27 @@ const styles = StyleSheet.create({
     backgroundColor: '#111827',
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
-    elevation: 2,
+  },
+  quantityContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: '#111827',
+    borderRadius: 16,
+    padding: 6,
+  },
+  qtyButton: {
+    width: 32,
+    height: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  qtyText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '900',
+    minWidth: 20,
+    textAlign: 'center',
   },
   cartButton: {
     position: 'absolute',
