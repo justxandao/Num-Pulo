@@ -1,0 +1,58 @@
+services:
+  database:
+    image: postgres:16
+    container_name: num-pulo-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgrespassword
+      POSTGRES_DB: numpulo
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d numpulo"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: num-pulo-api
+    depends_on:
+      database:
+        condition: service_healthy
+    environment:
+      # Variáveis essenciais para rodar no Docker
+      DATABASE_URL: "postgresql://postgres:postgrespassword@database:5432/numpulo?schema=public"
+      JWT_SECRET: "docker-dev-jwt-secret-123"
+    ports:
+      - "3000:3000"
+    volumes:
+      # Bind mount do código fonte para hot reload
+      - .:/app
+      # Volumes anônimos para evitar sobrescrita do node_modules local (Windows) no container (Linux)
+      - /app/node_modules
+      - /app/packages/database/node_modules
+      - /app/apps/api/node_modules
+    # O startup script realiza o fluxo automático esperado
+    command: >
+      sh -c "
+      echo '📦 Instalando dependências...' && 
+      npm install && 
+      cd packages/database && 
+      echo '⚙️ Gerando Prisma Client...' && 
+      npx prisma generate && 
+      echo '🔄 Aplicando Migrations...' && 
+      npx prisma migrate deploy && 
+      echo '🌱 Rodando Database Seed...' && 
+      npx prisma db seed && 
+      cd ../.. && 
+      echo '🚀 Iniciando API no modo Dev...' && 
+      npm run dev
+      "
+
+volumes:
+  postgres_data:
