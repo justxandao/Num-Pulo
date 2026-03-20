@@ -48,7 +48,7 @@ const start = async () => {
     await server.listen({ port: 3000, host: '0.0.0.0' })
     
     // Setup Socket.io
-    socketService.setup(server)
+    await socketService.setup(server)
     
     server.log.info(`Servidor Num Pulo rodando na porta 3000`)
   } catch (err) {

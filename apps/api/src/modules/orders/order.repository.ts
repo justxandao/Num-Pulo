@@ -38,4 +38,29 @@ export class OrderRepository {
       orderBy: { createdAt: 'desc' }
     })
   }
+
+  async findAvailableForPickUp(): Promise<Order[]> {
+    return prisma.order.findMany({
+      where: { 
+        status: 'READY',
+        courierId: null
+      },
+      include: {
+        store: true,
+        customer: true,
+        items: { include: { product: true } }
+      },
+      orderBy: { updatedAt: 'desc' }
+    })
+  }
+
+  async assignCourier(id: string, courierId: string): Promise<Order> {
+    return prisma.order.update({
+      where: { id },
+      data: { 
+        courierId,
+        status: 'DISPATCHED'
+      }
+    })
+  }
 }

@@ -1,6 +1,7 @@
 import { Server } from 'socket.io'
 import { FastifyInstance } from 'fastify'
-import { UserRole } from '@num-pulo/database'
+import { createAdapter } from '@socket.io/redis-adapter'
+import Redis from 'ioredis'
 
 export class SocketService {
   private static instance: SocketService
@@ -15,13 +16,20 @@ export class SocketService {
     return SocketService.instance
   }
 
-  public setup(fastify: FastifyInstance) {
+  public async setup(fastify: FastifyInstance) {
     this.io = new Server(fastify.server, {
       cors: {
         origin: '*', // Ajustar em produção
         methods: ['GET', 'POST']
       }
     })
+
+    // Configuração do Adaptador Redis para Escalabilidade Horizontal
+    const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379'
+    const pubClient = new Redis(redisUrl)
+    const subClient = pubClient.duplicate()
+
+    this.io.adapter(createAdapter(pubClient, subClient))
 
     // Middleware de Autenticação JWT
     this.io.use(async (socket, next) => {

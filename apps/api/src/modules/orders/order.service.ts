@@ -107,4 +107,25 @@ export class OrderService {
   async listStoreOrders(storeId: string) {
     return this.orderRepository.findByStoreId(storeId)
   }
+
+  async listAvailableOrders() {
+    return this.orderRepository.findAvailableForPickUp()
+  }
+
+  async acceptOrderForDelivery(orderId: string, courierId: string) {
+    const order = await this.orderRepository.findById(orderId)
+    
+    if (!order) throw new Error('Pedido não encontrado')
+    if (order.status !== 'READY' || order.courierId) {
+      throw new Error('Este pedido não está disponível para coleta.')
+    }
+
+    const updated = await this.orderRepository.assignCourier(orderId, courierId)
+
+    // Notificar Cliente e Loja
+    socketService.emitToUser(order.customerId, 'order:dispatched', { orderId, courierId })
+    socketService.emitToUser(order.storeId, 'order:dispatched', { orderId, courierId })
+
+    return updated
+  }
 }
