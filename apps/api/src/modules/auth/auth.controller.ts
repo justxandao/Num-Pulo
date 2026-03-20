@@ -1,13 +1,13 @@
 import { FastifyRequest, FastifyReply } from 'fastify'
 import { AuthService } from './auth.service'
-import { Prisma } from '@num-pulo/database'
+import { RegisterInput, LoginInput } from './auth.schema'
 
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
-  async register(request: FastifyRequest, reply: FastifyReply) {
+  async register(request: FastifyRequest<{ Body: RegisterInput }>, reply: FastifyReply) {
     try {
-      const data = request.body as Prisma.UserCreateInput
+      const data = request.body
       const user = await this.authService.register(data)
       
       const token = await reply.jwtSign({
@@ -22,14 +22,9 @@ export class AuthController {
     }
   }
 
-  async login(request: FastifyRequest, reply: FastifyReply) {
+  async login(request: FastifyRequest<{ Body: LoginInput }>, reply: FastifyReply) {
     try {
-      const body = request.body as Record<string, string>
-      const email = body?.email
-      const password = body?.password
-      if (!email || !password) {
-        throw new Error('O e-mail e a senha são obrigatórios')
-      }
+      const { email, password } = request.body
 
       const user = await this.authService.login(email, password)
 

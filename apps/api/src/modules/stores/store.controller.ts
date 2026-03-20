@@ -1,17 +1,14 @@
 import { FastifyRequest, FastifyReply } from 'fastify'
 import { StoreService } from './store.service'
+import { CreateStoreInput, UpdateStoreInput } from './store.schema'
 
 export class StoreController {
   constructor(private readonly storeService: StoreService) {}
 
-  async create(request: FastifyRequest, reply: FastifyReply) {
+  async create(request: FastifyRequest<{ Body: CreateStoreInput }>, reply: FastifyReply) {
     try {
-      const { name } = request.body as { name: string }
+      const { name } = request.body
       const { sub: ownerId } = request.user
-
-      if (!name) {
-        throw new Error('O nome da loja é obrigatório')
-      }
 
       const store = await this.storeService.create({
         name,
@@ -42,9 +39,9 @@ export class StoreController {
     }
   }
 
-  async update(request: FastifyRequest, reply: FastifyReply) {
+  async update(request: FastifyRequest<{ Body: UpdateStoreInput; Params: { id: string } }>, reply: FastifyReply) {
     try {
-      const { id } = request.params as { id: string }
+      const { id } = request.params
       const { sub: userId } = request.user
       const store = await this.storeService.update(id, userId, request.body)
       return reply.send({ success: true, store })

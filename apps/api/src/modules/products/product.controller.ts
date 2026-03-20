@@ -1,10 +1,11 @@
 import { FastifyRequest, FastifyReply } from 'fastify'
 import { ProductService } from './product.service'
+import { CreateProductInput, UpdateProductInput } from './product.schema'
 
 export class ProductController {
   constructor(private readonly productService: ProductService) {}
 
-  async create(request: FastifyRequest, reply: FastifyReply) {
+  async create(request: FastifyRequest<{ Body: CreateProductInput }>, reply: FastifyReply) {
     try {
       const { sub: userId } = request.user
       const product = await this.productService.create(request.body, userId)
@@ -24,9 +25,9 @@ export class ProductController {
     }
   }
 
-  async update(request: FastifyRequest, reply: FastifyReply) {
+  async update(request: FastifyRequest<{ Body: UpdateProductInput; Params: { id: string } }>, reply: FastifyReply) {
     try {
-      const { id } = request.params as { id: string }
+      const { id } = request.params
       const { sub: userId } = request.user
       const product = await this.productService.updateProduct(id, userId, request.body)
       return reply.send({ success: true, product })

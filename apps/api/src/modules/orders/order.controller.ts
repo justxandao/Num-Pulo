@@ -1,12 +1,13 @@
 import { FastifyRequest, FastifyReply } from 'fastify'
 import { OrderService } from './order.service'
+import { CreateOrderInput, UpdateOrderStatusInput } from './order.schema'
 
 export class OrderController {
   constructor(private readonly orderService: OrderService) {}
 
-  async create(request: FastifyRequest, reply: FastifyReply) {
+  async create(request: FastifyRequest<{ Body: CreateOrderInput }>, reply: FastifyReply) {
     try {
-      const { storeId, items } = request.body as { storeId: string; items: any[] }
+      const { storeId, items } = request.body
       const { sub: customerId } = request.user
       
       const order = await this.orderService.createCheckout(customerId, storeId, items)
@@ -38,10 +39,10 @@ export class OrderController {
     }
   }
 
-  async updateStatus(request: FastifyRequest, reply: FastifyReply) {
+  async updateStatus(request: FastifyRequest<{ Body: UpdateOrderStatusInput; Params: { id: string } }>, reply: FastifyReply) {
     try {
-      const { id } = request.params as { id: string }
-      const { status } = request.body as { status: string }
+      const { id } = request.params
+      const { status } = request.body
       const order = await this.orderService.updateStatus(id, status)
       return reply.send({ success: true, order })
     } catch (error: any) {

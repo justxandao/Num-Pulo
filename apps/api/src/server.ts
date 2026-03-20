@@ -9,9 +9,11 @@ import { productRoutes } from './modules/products/product.routes'
 import { adminRoutes } from './modules/admin/admin.routes'
 import { socketService } from './infrastructure/socket/socket.service'
 
+import { TypeBoxTypeProvider } from '@fastify/type-provider-typebox'
+
 const server = Fastify({
   logger: true
-})
+}).withTypeProvider<TypeBoxTypeProvider>()
 
 // Plugins
 server.register(cors, {
