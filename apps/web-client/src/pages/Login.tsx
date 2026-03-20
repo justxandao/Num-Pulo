@@ -1,76 +1,101 @@
-import { Link, useNavigate } from 'react-router-dom'
-import { ArrowRight, Mail, Lock } from 'lucide-react'
+import { useState } from 'react'
+import { useNavigate, Link } from 'react-router-dom'
+import { LogIn, Mail, Lock, Loader2, ArrowLeft } from 'lucide-react'
+import { useAuth } from '../contexts/AuthContext'
 
 export default function Login() {
   const navigate = useNavigate()
+  const { signIn } = useAuth()
+  
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
-    // Mock login and redirect to app
-    navigate('/app')
+    setLoading(true)
+    setError('')
+
+    try {
+      await signIn({ email, password })
+      navigate('/app')
+    } catch (err: any) {
+      console.error(err)
+      setError('E-mail ou senha inválidos. Tente novamente.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50/50 p-4">
-      {/* Decorative gradient blobs */}
-      <div className="absolute top-0 right-0 -translate-y-12 translate-x-1/3 w-[600px] h-[600px] bg-primary-100/40 rounded-full blur-3xl opacity-50 pointer-events-none" />
-      <div className="absolute bottom-0 left-0 translate-y-1/3 -translate-x-1/3 w-[600px] h-[600px] bg-emerald-50/40 rounded-full blur-3xl opacity-50 pointer-events-none" />
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+      <Link 
+        to="/" 
+        className="absolute top-8 left-8 flex items-center gap-2 text-gray-400 hover:text-gray-900 transition-colors font-bold"
+      >
+        <ArrowLeft className="w-5 h-5" /> Voltar para Home
+      </Link>
 
-      <div className="max-w-md w-full relative z-10">
+      <div className="w-full max-w-md">
         <div className="text-center mb-10">
-          <Link to="/" className="inline-flex items-center gap-3 mb-6 group">
-            <img src="/icone.svg" alt="Logo" className="w-12 h-12 group-hover:scale-110 transition-transform" />
-            <span className="text-3xl font-black bg-gradient-to-r from-primary-600 to-primary-500 bg-clip-text text-transparent transform -skew-x-12">
-              NUM PULO
-            </span>
-          </Link>
-          <h2 className="text-3xl font-extrabold text-gray-900 tracking-tight">Bem-vindo de volta</h2>
-          <p className="text-gray-500 mt-2">Acesse sua conta para pedir agora</p>
+          <div className="w-20 h-20 bg-primary-500 rounded-[2rem] flex items-center justify-center mx-auto mb-6 shadow-xl shadow-primary-500/20 -skew-x-12 rotate-3 hover:rotate-0 transition-all duration-500">
+             <LogIn className="w-10 h-10 text-white" />
+          </div>
+          <h1 className="text-4xl font-black text-gray-900 tracking-tight">Bem-vindo de volta!</h1>
+          <p className="text-gray-500 mt-2 font-medium">Faça login para continuar seus pedidos.</p>
         </div>
 
-        <div className="bg-white rounded-3xl shadow-xl shadow-gray-200/50 p-8 border border-gray-100">
+        <div className="bg-white p-8 rounded-[2.5rem] shadow-2xl shadow-gray-200/50 border border-gray-100">
+          {error && (
+            <div className="bg-red-50 border border-red-100 text-red-600 px-4 py-3 rounded-2xl text-sm font-bold mb-6 animate-shake">
+              {error}
+            </div>
+          )}
+
           <form onSubmit={handleLogin} className="space-y-6">
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">E-mail ou Celular</label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <Mail className="h-5 w-5 text-gray-400" />
-                </div>
+            <div className="space-y-2">
+              <label className="text-sm font-black text-gray-700 ml-1">E-mail</label>
+              <div className="relative group">
+                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-primary-500 transition-colors" />
                 <input 
-                  type="text" 
-                  className="block w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 focus:bg-white transition-all outline-none" 
-                  placeholder="voce@email.com"
+                  type="email" 
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full pl-12 pr-4 py-4 bg-gray-50 border-transparent rounded-[1.25rem] focus:bg-white focus:ring-2 focus:ring-primary-500 transition-all outline-none text-gray-900"
+                  placeholder="seu@email.com"
                   required
                 />
               </div>
             </div>
 
-            <div>
-              <div className="flex justify-between items-baseline mb-2">
-                <label className="block text-sm font-semibold text-gray-700">Senha</label>
-                <a href="#" className="text-sm font-medium text-primary-600 hover:text-primary-500 transition-colors">Esqueceu a senha?</a>
-              </div>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <Lock className="h-5 w-5 text-gray-400" />
-                </div>
+            <div className="space-y-2">
+              <label className="text-sm font-black text-gray-700 ml-1">Senha</label>
+              <div className="relative group">
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-primary-500 transition-colors" />
                 <input 
                   type="password" 
-                  className="block w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 focus:bg-white transition-all outline-none" 
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full pl-12 pr-4 py-4 bg-gray-50 border-transparent rounded-[1.25rem] focus:bg-white focus:ring-2 focus:ring-primary-500 transition-all outline-none text-gray-900"
                   placeholder="••••••••"
                   required
                 />
               </div>
             </div>
 
-            <button type="submit" className="w-full flex items-center justify-center gap-2 bg-primary-500 hover:bg-primary-600 text-white px-8 py-3.5 rounded-xl font-bold text-lg shadow-lg shadow-primary-500/30 hover:shadow-primary-500/50 hover:-translate-y-0.5 transition-all">
-              Entrar <ArrowRight className="w-5 h-5" />
+            <button 
+              type="submit" 
+              disabled={loading}
+              className="w-full bg-gray-900 text-white py-5 rounded-[1.5rem] font-black text-lg shadow-xl shadow-gray-900/20 hover:bg-gray-800 disabled:opacity-50 active:scale-[0.98] transition-all flex items-center justify-center gap-3"
+            >
+              {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : <>Entrar agora <LogIn className="w-5 h-5" /></>}
             </button>
           </form>
 
-            <p className="text-center text-gray-500 text-sm mt-8">
-              Ainda não tem conta? <a href="#" className="font-bold text-primary-600 hover:text-primary-500">Crie agora</a>
-            </p>
+          <p className="text-center text-gray-500 mt-8 text-sm font-medium">
+            Não tem uma conta? <Link to="/register" className="text-primary-500 font-black hover:underline">Cadastre-se</Link>
+          </p>
         </div>
       </div>
     </div>

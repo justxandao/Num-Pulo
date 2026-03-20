@@ -1,45 +1,110 @@
 import { OrderRepository } from './order.repository'
+import { ProductRepository } from '../products/product.repository'
+import { socketService } from '../../infrastructure/socket/socket.service'
+import { StoreRepository } from '../stores/store.repository'
 
-// Service contem REGRA DE NEGÓCIO PURA. Zero referências ao Fastify ou Protocolos HTTP.
 export class OrderService {
-  constructor(private readonly orderRepository: OrderRepository) {}
+  constructor(
+    private readonly orderRepository: OrderRepository,
+    private readonly productRepository: ProductRepository,
+    private readonly storeRepository: StoreRepository
+  ) {}
 
-  async createCheckout(data: any) {
-    // 1. Regra: Somente cobrar taxa em pedidos abaixo de 50 (Exemplo de regra)
-    const baseTotal = data.items.reduce((acc: number, item: any) => acc + (item.price * item.quantity), 0)
-    const deliveryFee = baseTotal > 50 ? 0 : 5.00
-    const finalAmount = baseTotal + deliveryFee
+  async createCheckout(customerId: string, storeId: string, items: { productId: string; quantity: number }[]) {
+    if (!items || items.length === 0) {
+      throw new Error('O carrinho não pode estar vazio')
+    }
 
-    // 2. Persistência: Criar pedido com status PENDING inicializando a máquina de estado
+    // 1. Validar e Buscar Preços Reais do Banco (Security)
+    let subtotal = 0
+    const orderItemsData = []
+
+    for (const item of items) {
+      const product = await this.productRepository.findById(item.productId)
+      
+      if (!product || !product.isActive) {
+        throw new Error(`Produto ${item.productId} não encontrado ou inativo`)
+      }
+
+      if (product.storeId !== storeId) {
+        throw new Error(`Produto ${product.name} não pertence a esta loja`)
+      }
+
+      const price = Number(product.price)
+      subtotal += price * item.quantity
+
+      orderItemsData.push({
+        productId: product.id,
+        quantity: item.quantity,
+        price: product.price
+      })
+    }
+
+    // 2. Regra de Taxa de Entrega (R$ 5,00 se subtotal < 50)
+    const deliveryFee = subtotal >= 50 ? 0 : 5.00
+    const totalAmount = subtotal + deliveryFee
+
+    // 3. Criar Pedido Atômico com Itens (Nested Write)
     const order = await this.orderRepository.create({
       status: 'PENDING',
-      totalAmount: finalAmount,
+      totalAmount,
       deliveryFee,
-      customer: { connect: { id: data.customerId } },
-      store: { connect: { id: data.storeId } }
+      customer: { connect: { id: customerId } },
+      store: { connect: { id: storeId } },
+      items: {
+        create: orderItemsData
+      }
     })
 
-    // 3. Dispatch Event: Aqui emitiríamos o evento "order:created" via Socket.io/Redis 
-    //    para a loja aceitar.
+    // 4. Notificar Loja em Tempo Real
+    const store = await this.storeRepository.findById(storeId)
+    if (store) {
+      socketService.emitToUser(store.ownerId, 'order:new', { orderId: order.id, customerId })
+    }
+
     return order
+  }
+
+  async listCustomerOrders(customerId: string) {
+    return this.orderRepository.findByCustomerId(customerId)
   }
 
   async acceptOrder(orderId: string, storeOwnerId: string) {
     const order = await this.orderRepository.findById(orderId)
     if (!order) throw new Error('Pedido não encontrado')
     
-    // Regra de ABAC (Validação de propriedade do lojista) deve acontecer aqui em produção
-    // if(order.store.ownerId !== storeOwnerId) throw ForbiddenException()
-
-    // Regra da Máquina de Estado: Apenas PENDING pode ir para ACCEPTED
+    // Status Machine Check: Apenas PENDING -> ACCEPTED
     if (order.status !== 'PENDING') {
       throw new Error('Processo inválido: O pedido já foi processado ou rejeitado.')
     }
 
-    // Avança o status
     const updated = await this.orderRepository.updateStatus(orderId, 'ACCEPTED')
     
-    // Dispatch Event: "order:accepted" notifica o Cliente que preparo iniciou.
+    // Notificar Cliente em Tempo Real sobre a atualização do status
+    socketService.emitToUser(order.customerId, 'order:status_updated', { 
+      orderId, 
+      status: 'ACCEPTED' 
+    })
+
     return updated
+  }
+
+  async updateStatus(orderId: string, status: string) {
+    const order = await this.orderRepository.findById(orderId)
+    if (!order) throw new Error('Pedido não encontrado')
+
+    const updated = await this.orderRepository.updateStatus(orderId, status)
+    
+    // Notificar Cliente em Tempo Real
+    socketService.emitToUser(order.customerId, 'order:status_updated', { 
+      orderId, 
+      status 
+    })
+
+    return updated
+  }
+
+  async listStoreOrders(storeId: string) {
+    return this.orderRepository.findByStoreId(storeId)
   }
 }

@@ -3,6 +3,11 @@ import cors from '@fastify/cors'
 import jwt from '@fastify/jwt'
 import { prisma } from '@num-pulo/database'
 import { orderRoutes } from './modules/orders/order.routes'
+import { authRoutes } from './modules/auth/auth.routes'
+import { storeRoutes } from './modules/stores/store.routes'
+import { productRoutes } from './modules/products/product.routes'
+import { adminRoutes } from './modules/admin/admin.routes'
+import { socketService } from './infrastructure/socket/socket.service'
 
 const server = Fastify({
   logger: true
@@ -18,7 +23,11 @@ server.register(jwt, {
 })
 
 // Modulos Padrão (DDD)
+server.register(authRoutes, { prefix: '/api/v1/auth' })
+server.register(storeRoutes, { prefix: '/api/v1/stores' })
+server.register(productRoutes, { prefix: '/api/v1/products' })
 server.register(orderRoutes, { prefix: '/api/v1/orders' })
+server.register(adminRoutes, { prefix: '/api/v1/admin' })
 
 // Rotas de Teste e Healthcheck
 server.get('/health', async (request, reply) => {
@@ -35,6 +44,10 @@ server.get('/health', async (request, reply) => {
 const start = async () => {
   try {
     await server.listen({ port: 3000, host: '0.0.0.0' })
+    
+    // Setup Socket.io
+    socketService.setup(server)
+    
     server.log.info(`Servidor Num Pulo rodando na porta 3000`)
   } catch (err) {
     server.log.error(err)

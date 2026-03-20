@@ -16,4 +16,26 @@ export class OrderRepository {
       data: { status }
     })
   }
+
+  async findByCustomerId(customerId: string): Promise<Order[]> {
+    return prisma.order.findMany({
+      where: { customerId },
+      include: { 
+        items: { include: { product: true } },
+        store: true 
+      },
+      orderBy: { createdAt: 'desc' }
+    })
+  }
+
+  async findByStoreId(storeId: string): Promise<Order[]> {
+    return prisma.order.findMany({
+      where: { storeId },
+      include: { 
+        items: { include: { product: true } },
+        customer: true 
+      },
+      orderBy: { createdAt: 'desc' }
+    })
+  }
 }
