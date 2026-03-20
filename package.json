@@ -12,7 +12,9 @@
     "build": "turbo run build"
   },
   "devDependencies": {
+    "@vitest/ui": "^4.1.0",
     "prisma": "^7.5.0",
-    "turbo": "latest"
+    "turbo": "latest",
+    "vitest": "^4.1.0"
   }
 }

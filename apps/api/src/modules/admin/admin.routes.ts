@@ -4,8 +4,7 @@ import { StoreService } from '../stores/store.service'
 import { StoreRepository } from '../stores/store.repository'
 import { UserService } from '../users/user.service'
 import { UserRepository } from '../users/user.repository'
-import { requireAuth } from '../../shared/middlewares/require-auth'
-import { requireAdmin } from '../../shared/middlewares/require-admin'
+import { authorize } from '../../shared/middlewares/authorize'
 
 export async function adminRoutes(fastify: FastifyInstance) {
   const storeRepository = new StoreRepository()
@@ -16,8 +15,7 @@ export async function adminRoutes(fastify: FastifyInstance) {
   
   const controller = new AdminController(storeService, userService)
 
-  fastify.addHook('preHandler', requireAuth)
-  fastify.addHook('preHandler', requireAdmin)
+  fastify.addHook('preHandler', authorize(['ADMIN']))
 
   fastify.get('/stores', controller.listStores.bind(controller))
   fastify.patch('/stores/:id/status', controller.updateStoreStatus.bind(controller))

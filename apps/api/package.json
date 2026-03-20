@@ -12,7 +12,14 @@
     "devDependencies": {
         "@types/node": "^25.5.0",
         "tsx": "^4.21.0",
-        "typescript": "^5.9.3"
+        "typescript": "^5.9.3",
+        "vitest": "^4.1.0"
     },
-    "scripts": {}
+    "scripts": {
+        "dev": "tsx watch src/server.ts",
+        "build": "tsc",
+        "test": "vitest run",
+        "test:watch": "vitest",
+        "test:ui": "vitest --ui"
+    }
 }
