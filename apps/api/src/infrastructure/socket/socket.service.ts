@@ -54,12 +54,17 @@ export class SocketService {
     })
 
     this.io.on('connection', (socket) => {
-      const { userId } = socket.data
+      const { userId, role } = socket.data
       
       // Entra na sala privada do usuário para notificações diretas
       socket.join(`user:${userId}`)
+
+      // Entra na sala de entregadores se tiver a role
+      if (role === 'COURIER' || role === 'ADMIN') {
+        socket.join('couriers')
+      }
       
-      console.log(`Socket conectado: ${socket.id} (Usuário: ${userId})`)
+      console.log(`Socket conectado: ${socket.id} (Usuário: ${userId}, Role: ${role})`)
 
       socket.on('disconnect', () => {
         console.log(`Socket desconectado: ${socket.id}`)

@@ -63,4 +63,16 @@ export class OrderRepository {
       }
     })
   }
+
+  async findByCourierId(courierId: string): Promise<Order[]> {
+    return prisma.order.findMany({
+      where: { courierId },
+      include: {
+        store: true,
+        customer: true,
+        items: { include: { product: true } }
+      },
+      orderBy: { updatedAt: 'desc' }
+    })
+  }
 }

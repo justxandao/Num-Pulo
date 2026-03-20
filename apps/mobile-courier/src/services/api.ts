@@ -17,4 +17,11 @@ api.interceptors.request.use(async (config) => {
   return config
 })
 
+export const orderApi = {
+  getAvailable: () => api.get('/orders/available'),
+  getMyDeliveries: () => api.get('/orders/my-deliveries'),
+  pickUp: (orderId: string) => api.patch(`/orders/${orderId}/pickup`),
+  updateStatus: (orderId: string, status: string) => api.patch(`/orders/${orderId}/status`, { status })
+}
+
 export default api

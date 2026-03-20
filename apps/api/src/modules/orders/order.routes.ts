@@ -29,4 +29,8 @@ export async function orderRoutes(server: FastifyInstance) {
   }, controller.updateStatus.bind(controller) as any)
   
   server.patch('/:id/accept', { preHandler: [authorize(['MERCHANT'])] }, controller.accept.bind(controller))
+
+  server.get('/available', { preHandler: [authorize(['COURIER', 'ADMIN'])] }, controller.listAvailable.bind(controller) as any)
+  server.get('/my-deliveries', { preHandler: [authorize(['COURIER'])] }, controller.listMyDeliveries.bind(controller) as any)
+  server.patch('/:id/pickup', { preHandler: [authorize(['COURIER'])] }, controller.pickUp.bind(controller) as any)
 }

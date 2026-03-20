@@ -59,4 +59,35 @@ export class OrderController {
       return reply.code(400).send({ success: false, message: error.message })
     }
   }
+
+  async listAvailable(request: FastifyRequest, reply: FastifyReply) {
+    try {
+      const orders = await this.orderService.listAvailableOrders()
+      return reply.send({ success: true, orders })
+    } catch (error: any) {
+      return reply.code(400).send({ success: false, message: error.message })
+    }
+  }
+
+  async pickUp(request: FastifyRequest, reply: FastifyReply) {
+    try {
+      const { id } = request.params as { id: string }
+      const { sub: courierId } = request.user
+      
+      const order = await this.orderService.acceptOrderForDelivery(id, courierId)
+      return reply.send({ success: true, order })
+    } catch (error: any) {
+      return reply.code(400).send({ success: false, message: error.message })
+    }
+  }
+
+  async listMyDeliveries(request: FastifyRequest, reply: FastifyReply) {
+    try {
+      const { sub: courierId } = request.user
+      const orders = await this.orderService.listCourierOrders(courierId)
+      return reply.send({ success: true, orders })
+    } catch (error: any) {
+      return reply.code(400).send({ success: false, message: error.message })
+    }
+  }
 }

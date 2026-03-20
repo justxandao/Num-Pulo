@@ -101,6 +101,14 @@ export class OrderService {
       status 
     })
 
+    // Se o pedido estiver pronto para entrega, notificar todos os entregadores
+    if (status === 'READY') {
+      socketService.emitToRoom('couriers', 'order:ready', {
+        orderId,
+        storeName: order.storeId // Idealmente carregar o nome da loja
+      })
+    }
+
     return updated
   }
 
@@ -127,5 +135,9 @@ export class OrderService {
     socketService.emitToUser(order.storeId, 'order:dispatched', { orderId, courierId })
 
     return updated
+  }
+
+  async listCourierOrders(courierId: string) {
+    return this.orderRepository.findByCourierId(courierId)
   }
 }
