@@ -6,6 +6,10 @@
   "types": "index.ts",
   "dependencies": {
     "@prisma/client": "^5.10.2",
-    "prisma": "^5.10.2"
+    "prisma": "^5.10.2",
+    "tsx": "^4.21.0"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
   }
 }
